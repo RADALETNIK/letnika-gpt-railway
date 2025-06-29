@@ -1,29 +1,24 @@
+from openai import OpenAI
+from flask import Flask, request, Response
 import os
 import json
-from flask import Flask, request, Response
 from dotenv import load_dotenv
-from openai import OpenAI
 
-# ——— Загрузка .env переменных ———
+# ——— Загрузка переменных среды
 load_dotenv()
-
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise RuntimeError("❌ OPENAI_API_KEY не задан в .env!")
 
-PORT = int(os.environ.get("PORT", 8080))
-
-# ——— Клиент OpenAI (новый SDK) ———
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+PORT = int(os.environ.get("PORT", 8080))
 app = Flask(__name__)
 
-# ——— Проверка сервера ———
 @app.route("/", methods=["GET"])
 def home():
     return "🔥 Railway API работает с openai>=1.0.0!", 200
 
-# ——— Основной маршрут ———
 @app.route("/api", methods=["POST"])
 def handle():
     try:
@@ -40,7 +35,6 @@ def handle():
             {"role": "user", "content": text}
         ]
 
-        # GPT-запрос через новый SDK
         chat_response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=messages,
@@ -49,15 +43,14 @@ def handle():
         )
 
         reply = chat_response.choices[0].message.content.strip()
-
         return Response(
-            json.dumps({"messages": [{"text": reply}]}, ensure_ascii=False),
+            json.dumps({"messages": [{"text": reply}]}),
             content_type="application/json; charset=utf-8"
         )
-
+    
     except Exception as e:
         return Response(
-            json.dumps({"error": str(e)}, ensure_ascii=False),
+            json.dumps({"error": str(e)}),
             content_type="application/json; charset=utf-8"
         ), 500
 
